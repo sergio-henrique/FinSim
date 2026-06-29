@@ -13,6 +13,8 @@ import com.finsim.app.domain.repository.BillRepository
 import com.finsim.app.domain.repository.FixedIncomeInvestmentRepository
 import com.finsim.app.domain.repository.MonthlySnapshotRepository
 import com.finsim.app.domain.repository.TransactionRepository
+import com.finsim.app.domain.repository.UserAchievementRepository
+import com.finsim.app.domain.repository.UserMissionRepository
 import com.finsim.app.domain.repository.UserProfileRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -32,6 +34,8 @@ class AdvanceMonthUseCaseTest {
     private val billRepository: BillRepository = mockk(relaxed = true)
     private val transactionRepository: TransactionRepository = mockk(relaxed = true)
     private val snapshotRepository: MonthlySnapshotRepository = mockk(relaxed = true)
+    private val userMissionRepository: UserMissionRepository = mockk(relaxed = true)
+    private val userAchievementRepository: UserAchievementRepository = mockk(relaxed = true)
 
     private val useCase = AdvanceMonthUseCase(
         userProfileRepository = userProfileRepository,
@@ -40,6 +44,8 @@ class AdvanceMonthUseCaseTest {
         billRepository = billRepository,
         transactionRepository = transactionRepository,
         snapshotRepository = snapshotRepository,
+        userMissionRepository = userMissionRepository,
+        userAchievementRepository = userAchievementRepository,
     )
 
     private fun buildProfile(currentMonth: Int = 1) = UserProfile(
@@ -95,6 +101,8 @@ class AdvanceMonthUseCaseTest {
         coEvery { billRepository.getByProfileIdAndMonth(1L, profile.currentMonth) } returns flowOf(bills)
         coEvery { transactionRepository.save(any()) } returns 1L
         coEvery { snapshotRepository.save(any()) } returns 1L
+        coEvery { userMissionRepository.getByProfileId(1L) } returns flowOf(emptyList())
+        coEvery { userAchievementRepository.getByProfileId(1L) } returns flowOf(emptyList())
     }
 
     @Test
@@ -124,8 +132,6 @@ class AdvanceMonthUseCaseTest {
 
         useCase(profileId = 1L)
 
-        // O saldo esperado é 50_000 + 200_000 = 250_000, mas pode haver débito
-        // de evento aleatório — verificamos ao menos que o update foi chamado
         coVerify(exactly = 1) { accountRepository.update(any()) }
     }
 
@@ -209,5 +215,15 @@ class AdvanceMonthUseCaseTest {
         val result = useCase(profileId = 1L) as UseCaseResult.Success
 
         assertIs<AdvanceMonthResult>(result.data)
+    }
+
+    @Test
+    fun resultado_deve_conter_listas_de_missoes_e_conquistas() = runTest {
+        setupMocks()
+
+        val result = useCase(profileId = 1L) as UseCaseResult.Success
+
+        assertIs<List<*>>(result.data.newlyCompletedMissions)
+        assertIs<List<*>>(result.data.newlyUnlockedAchievements)
     }
 }

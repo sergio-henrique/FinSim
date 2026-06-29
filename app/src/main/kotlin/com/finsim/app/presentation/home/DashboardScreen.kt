@@ -33,12 +33,6 @@ import com.finsim.app.presentation.common.FinSimButton
 import com.finsim.app.presentation.common.FinSimCard
 import com.finsim.app.presentation.common.toCurrency
 
-/**
- * Tela principal do FinSim — Dashboard.
- *
- * Exibe saldo, reserva de emergência, investimentos e patrimônio total.
- * Permite avançar o mês simulado e navegar para as demais seções do MVP.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
@@ -47,12 +41,16 @@ fun DashboardScreen(
     onNavigateToReserve: () -> Unit,
     onNavigateToFixedIncome: () -> Unit,
     onNavigateToSummary: () -> Unit,
+    onNavigateToProgress: () -> Unit,
     viewModel: DashboardViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
     uiState.monthAdvanceMessage?.let { message ->
         val event = uiState.randomEvent
+        val missions = uiState.newlyCompletedMissionTitles
+        val achievements = uiState.newlyUnlockedAchievements
+
         AlertDialog(
             onDismissRequest = viewModel::clearMonthAdvanceMessage,
             title = { Text(if (event != null) "Fim do mês — Imprevisto!" else "Fim do mês") },
@@ -76,7 +74,42 @@ fun DashboardScreen(
                         )
                         HorizontalDivider()
                     }
+
                     Text(text = message)
+
+                    if (missions.isNotEmpty()) {
+                        HorizontalDivider()
+                        Text(
+                            text = "Missões concluídas:",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                        missions.forEach { title ->
+                            Text(
+                                text = "✓ $title",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                    }
+
+                    if (achievements.isNotEmpty()) {
+                        HorizontalDivider()
+                        Text(
+                            text = "Conquistas desbloqueadas:",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.tertiary,
+                        )
+                        achievements.forEach { achievement ->
+                            Text(
+                                text = "${achievement.emoji} ${achievement.title}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.tertiary,
+                            )
+                        }
+                    }
                 }
             },
             confirmButton = {
@@ -239,6 +272,12 @@ fun DashboardScreen(
                     modifier = Modifier.weight(1f),
                 )
             }
+
+            FinSimButton(
+                text = "Missões e conquistas",
+                onClick = onNavigateToProgress,
+                modifier = Modifier.fillMaxWidth(),
+            )
 
             FinSimButton(
                 text = "Avançar mês",

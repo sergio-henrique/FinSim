@@ -7,7 +7,9 @@ import com.finsim.app.application.usecase.AdvanceMonthUseCase
 import com.finsim.app.application.usecase.GetMonthSummaryUseCase
 import com.finsim.app.application.usecase.MonthSummary
 import com.finsim.app.application.usecase.UseCaseResult
+import com.finsim.app.domain.model.Achievement
 import com.finsim.app.domain.model.RandomEvent
+import com.finsim.app.simulation.missions.MissionCatalog
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,6 +25,8 @@ data class DashboardUiState(
     val isAdvancingMonth: Boolean = false,
     val monthAdvanceMessage: String? = null,
     val randomEvent: RandomEvent? = null,
+    val newlyCompletedMissionTitles: List<String> = emptyList(),
+    val newlyUnlockedAchievements: List<Achievement> = emptyList(),
 )
 
 @HiltViewModel
@@ -59,12 +63,16 @@ class DashboardViewModel @Inject constructor(
                 is UseCaseResult.Success -> {
                     val advanceResult = result.data
                     val score = advanceResult.snapshot.financialHealthScore
-                    val message = buildAdvanceMessage(score)
+                    val missionTitles = advanceResult.newlyCompletedMissions.mapNotNull { id ->
+                        MissionCatalog.getById(id)?.title
+                    }
                     _uiState.update {
                         it.copy(
                             isAdvancingMonth = false,
-                            monthAdvanceMessage = message,
+                            monthAdvanceMessage = buildAdvanceMessage(score),
                             randomEvent = advanceResult.randomEvent,
+                            newlyCompletedMissionTitles = missionTitles,
+                            newlyUnlockedAchievements = advanceResult.newlyUnlockedAchievements,
                         )
                     }
                 }
@@ -78,7 +86,14 @@ class DashboardViewModel @Inject constructor(
     }
 
     fun clearMonthAdvanceMessage() {
-        _uiState.update { it.copy(monthAdvanceMessage = null, randomEvent = null) }
+        _uiState.update {
+            it.copy(
+                monthAdvanceMessage = null,
+                randomEvent = null,
+                newlyCompletedMissionTitles = emptyList(),
+                newlyUnlockedAchievements = emptyList(),
+            )
+        }
     }
 
     private fun buildAdvanceMessage(score: Int): String = when {

@@ -18,7 +18,8 @@ import javax.inject.Inject
  */
 class CreateProfileUseCase @Inject constructor(
     private val userProfileRepository: UserProfileRepository,
-    private val accountRepository: AccountRepository
+    private val accountRepository: AccountRepository,
+    private val initializeMissionsUseCase: InitializeMissionsUseCase,
 ) {
 
     /**
@@ -60,6 +61,8 @@ class CreateProfileUseCase @Inject constructor(
             updatedAt = System.currentTimeMillis()
         )
         accountRepository.save(account)
+
+        initializeMissionsUseCase(profileId)
 
         return UseCaseResult.Success(profileId)
     }

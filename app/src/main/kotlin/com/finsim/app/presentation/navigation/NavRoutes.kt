@@ -29,4 +29,8 @@ sealed class NavRoutes(val route: String) {
     data object MonthlySummary : NavRoutes("summary/{profileId}") {
         fun createRoute(profileId: Long) = "summary/$profileId"
     }
+
+    data object Progress : NavRoutes("progress/{profileId}") {
+        fun createRoute(profileId: Long) = "progress/$profileId"
+    }
 }

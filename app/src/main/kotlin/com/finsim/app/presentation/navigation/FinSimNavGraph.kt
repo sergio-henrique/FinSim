@@ -10,14 +10,15 @@ import com.finsim.app.presentation.bills.BillsScreen
 import com.finsim.app.presentation.fixedincome.FixedIncomeScreen
 import com.finsim.app.presentation.home.DashboardScreen
 import com.finsim.app.presentation.onboarding.OnboardingScreen
+import com.finsim.app.presentation.progress.ProgressScreen
 import com.finsim.app.presentation.reserve.ReserveScreen
 import com.finsim.app.presentation.summary.SummaryScreen
 
 /**
- * Grafo de navegação principal do FinSim MVP 1.
+ * Grafo de navegação principal do FinSim.
  *
- * O fluxo padrão é:
- *   Onboarding → Dashboard → (Bills | Reserve | FixedIncome | Summary)
+ * Fluxo padrão:
+ *   Onboarding → Dashboard → (Bills | Reserve | FixedIncome | Summary | Progress)
  *
  * Onboarding é removido da pilha ao criar o perfil para que o botão
  * Voltar não leve o usuário de volta ao cadastro.
@@ -49,6 +50,7 @@ fun FinSimNavGraph(navController: NavHostController) {
                 onNavigateToReserve = { navController.navigate(NavRoutes.Reserve.createRoute(profileId)) },
                 onNavigateToFixedIncome = { navController.navigate(NavRoutes.FixedIncome.createRoute(profileId)) },
                 onNavigateToSummary = { navController.navigate(NavRoutes.MonthlySummary.createRoute(profileId)) },
+                onNavigateToProgress = { navController.navigate(NavRoutes.Progress.createRoute(profileId)) },
             )
         }
 
@@ -93,6 +95,16 @@ fun FinSimNavGraph(navController: NavHostController) {
             SummaryScreen(
                 profileId = profileId,
                 onNavigateBack = { navController.popBackStack() },
+            )
+        }
+
+        composable(
+            route = NavRoutes.Progress.route,
+            arguments = listOf(navArgument("profileId") { type = NavType.LongType }),
+        ) { backStackEntry ->
+            val profileId = backStackEntry.arguments?.getLong("profileId") ?: return@composable
+            ProgressScreen(
+                onBack = { navController.popBackStack() },
             )
         }
     }

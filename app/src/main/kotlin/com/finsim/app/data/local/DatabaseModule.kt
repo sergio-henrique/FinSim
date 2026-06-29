@@ -7,6 +7,8 @@ import com.finsim.app.data.local.dao.BillDao
 import com.finsim.app.data.local.dao.FixedIncomeInvestmentDao
 import com.finsim.app.data.local.dao.MonthlySnapshotDao
 import com.finsim.app.data.local.dao.TransactionDao
+import com.finsim.app.data.local.dao.UserAchievementRecordDao
+import com.finsim.app.data.local.dao.UserMissionProgressDao
 import com.finsim.app.data.local.dao.UserProfileDao
 import dagger.Module
 import dagger.Provides
@@ -57,4 +59,12 @@ object DatabaseModule {
     @Provides
     fun provideMonthlySnapshotDao(db: FinSimDatabase): MonthlySnapshotDao =
         db.monthlySnapshotDao()
+
+    @Provides
+    fun provideUserMissionProgressDao(db: FinSimDatabase): UserMissionProgressDao =
+        db.userMissionProgressDao()
+
+    @Provides
+    fun provideUserAchievementRecordDao(db: FinSimDatabase): UserAchievementRecordDao =
+        db.userAchievementRecordDao()
 }
