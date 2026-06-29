@@ -54,4 +54,16 @@ object SimulatedRates {
      */
     fun monthlyToAnnual(monthlyRate: Double): Double =
         (1.0 + monthlyRate).pow(12.0) - 1.0
+
+    /**
+     * Taxa mensal de inflação simulada: 0,4% ao mês ≈ 4,9% ao ano.
+     *
+     * Conceito pedagógico: a inflação corrói o poder de compra ao longo do
+     * tempo. Contas que custavam R$ 500 hoje podem custar R$ 520 daqui a
+     * 12 meses — mesmo sem um único reajuste explícito. Manter dinheiro
+     * parado na conta corrente significa perder poder de compra a cada mês.
+     *
+     * Disponível a partir do MVP 2.
+     */
+    const val MONTHLY_INFLATION: Double = 0.004
 }

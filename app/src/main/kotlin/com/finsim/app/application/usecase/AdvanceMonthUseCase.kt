@@ -1,6 +1,9 @@
 package com.finsim.app.application.usecase
 
 import com.finsim.app.domain.model.MonthlySnapshot
+import com.finsim.app.domain.model.RandomEvent
+import com.finsim.app.domain.model.Transaction
+import com.finsim.app.domain.model.TransactionType
 import com.finsim.app.domain.repository.AccountRepository
 import com.finsim.app.domain.repository.BillRepository
 import com.finsim.app.domain.repository.FixedIncomeInvestmentRepository
@@ -13,23 +16,25 @@ import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 
 /**
+ * Resultado enriquecido da passagem de mês — inclui o snapshot e o evento
+ * aleatório (se ocorreu) para exibição na UI.
+ */
+data class AdvanceMonthResult(
+    val snapshot: MonthlySnapshot,
+    val randomEvent: RandomEvent?,
+)
+
+/**
  * Caso de uso: Avançar o mês simulado.
  *
- * Implementa a ordem obrigatória definida em RN-010:
+ * Ordem de processamento (RN-010):
  *   1. Rendimento dos investimentos.
  *   2. Crédito da renda mensal.
- *   3. Geração das contas do novo mês.
- *   4. Persistência de todos os novos estados.
- *   5. Cálculo do score de saúde financeira.
- *   6. Registro do snapshot mensal.
- *
- * A ordem de rendimento antes da renda é pedagogicamente intencional:
- * demonstra que o capital investido trabalha independentemente do salário.
- *
- * Conceito pedagógico: cada mês que passa sem investir é uma oportunidade
- * perdida de fazer o dinheiro trabalhar por você.
- *
- * @throws IllegalStateException se o perfil ou conta não forem encontrados.
+ *   3. Geração das contas com inflação.
+ *   4. Evento financeiro aleatório.
+ *   5. Persistência de todos os estados.
+ *   6. Score de saúde financeira.
+ *   7. Snapshot mensal.
  */
 class AdvanceMonthUseCase @Inject constructor(
     private val userProfileRepository: UserProfileRepository,
@@ -37,16 +42,10 @@ class AdvanceMonthUseCase @Inject constructor(
     private val investmentRepository: FixedIncomeInvestmentRepository,
     private val billRepository: BillRepository,
     private val transactionRepository: TransactionRepository,
-    private val snapshotRepository: MonthlySnapshotRepository
+    private val snapshotRepository: MonthlySnapshotRepository,
 ) {
 
-    /**
-     * @param profileId Id do perfil cujo mês será avançado.
-     * @return [UseCaseResult.Success] com o [MonthlySnapshot] do mês encerrado, ou
-     *         [UseCaseResult.Failure] em caso de erro inesperado.
-     */
-    suspend operator fun invoke(profileId: Long): UseCaseResult<MonthlySnapshot> {
-        // Etapa 1: Carregar estado atual
+    suspend operator fun invoke(profileId: Long): UseCaseResult<AdvanceMonthResult> {
         val profile = userProfileRepository.getById(profileId)
             ?: error("Perfil não encontrado para id=$profileId")
 
@@ -55,65 +54,74 @@ class AdvanceMonthUseCase @Inject constructor(
 
         val activeInvestments = investmentRepository.getByProfileId(profileId).first()
 
-        // Etapa 2: Buscar contas do mês atual como templates para o próximo
         val currentMonthBills = billRepository
             .getByProfileIdAndMonth(profileId, profile.currentMonth)
             .first()
 
-        // Etapa 3: Processar passagem de mês via motor de simulação
-        val input = MonthAdvanceEngine.MonthAdvanceInput(
-            profile = profile,
-            account = account,
-            activeInvestments = activeInvestments,
-            defaultBillTemplates = currentMonthBills
+        val engineResult = MonthAdvanceEngine.advance(
+            MonthAdvanceEngine.MonthAdvanceInput(
+                profile = profile,
+                account = account,
+                activeInvestments = activeInvestments,
+                defaultBillTemplates = currentMonthBills,
+            )
         )
-        val result = MonthAdvanceEngine.advance(input)
 
-        // Etapa 4a: Persistir investimentos com rendimento aplicado
-        result.updatedInvestments.forEach { investmentRepository.update(it) }
+        // Persistência: investimentos
+        engineResult.updatedInvestments.forEach { investmentRepository.update(it) }
 
-        // Etapa 4b: Persistir conta com renda creditada
-        accountRepository.update(result.updatedAccount)
+        // Persistência: conta (com possível débito do evento)
+        var finalAccount = engineResult.updatedAccount
+        val randomEvent = engineResult.randomEvent
 
-        // Etapa 4c: Persistir transação de renda
-        transactionRepository.save(result.incomeTransaction)
+        if (randomEvent != null) {
+            val eventDebit = randomEvent.amountCents.coerceAtMost(finalAccount.balance)
+            finalAccount = finalAccount.copy(balance = finalAccount.balance - eventDebit)
 
-        // Etapa 4d: Persistir contas geradas para o novo mês
-        result.newBills.forEach { billRepository.save(it) }
+            transactionRepository.save(
+                Transaction(
+                    accountId = account.id,
+                    type = TransactionType.EVENT,
+                    amount = eventDebit,
+                    description = randomEvent.title,
+                    month = engineResult.newMonth,
+                )
+            )
+        }
 
-        // Etapa 5: Atualizar mês corrente no perfil
-        val updatedProfile = profile.copy(currentMonth = result.newMonth)
+        accountRepository.update(finalAccount)
+        transactionRepository.save(engineResult.incomeTransaction)
+        engineResult.newBills.forEach { billRepository.save(it) }
+
+        val updatedProfile = profile.copy(currentMonth = engineResult.newMonth)
         userProfileRepository.update(updatedProfile)
 
-        // Etapa 6: Calcular score de saúde financeira com base no mês encerrado
+        // Score de saúde financeira
         val billsPaid = currentMonthBills.filter { it.isPaid }.sumOf { it.amount }
         val billsTotal = currentMonthBills.sumOf { it.amount }
-        val fixedIncomeBalance = result.updatedInvestments.sumOf { it.currentAmount }
+        val fixedIncomeBalance = engineResult.updatedInvestments.sumOf { it.currentAmount }
 
         val healthScore = FinancialRules.calculateHealthScore(
             billsPaid = billsPaid,
             billsTotal = billsTotal,
-            hasReserve = result.updatedAccount.emergencyReserveBalance > 0,
-            hasInvestment = result.updatedInvestments.isNotEmpty(),
-            isBalancePositive = result.updatedAccount.balance > 0
+            hasReserve = finalAccount.emergencyReserveBalance > 0,
+            hasInvestment = engineResult.updatedInvestments.isNotEmpty(),
+            isBalancePositive = finalAccount.balance > 0,
         )
 
-        // Etapa 7: Registrar snapshot do mês encerrado
         val snapshot = MonthlySnapshot(
             profileId = profileId,
             month = profile.currentMonth,
-            accountBalance = result.updatedAccount.balance,
-            reserveBalance = result.updatedAccount.emergencyReserveBalance,
+            accountBalance = finalAccount.balance,
+            reserveBalance = finalAccount.emergencyReserveBalance,
             fixedIncomeBalance = fixedIncomeBalance,
-            totalWealth = result.updatedAccount.balance +
-                result.updatedAccount.emergencyReserveBalance +
-                fixedIncomeBalance,
+            totalWealth = finalAccount.balance + finalAccount.emergencyReserveBalance + fixedIncomeBalance,
             billsPaidAmount = billsPaid,
             billsPendingAmount = billsTotal - billsPaid,
-            financialHealthScore = healthScore
+            financialHealthScore = healthScore,
         )
         snapshotRepository.save(snapshot)
 
-        return UseCaseResult.Success(snapshot)
+        return UseCaseResult.Success(AdvanceMonthResult(snapshot, randomEvent))
     }
 }

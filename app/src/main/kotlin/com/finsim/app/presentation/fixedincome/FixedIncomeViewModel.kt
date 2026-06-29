@@ -8,6 +8,7 @@ import com.finsim.app.application.usecase.InvestInFixedIncomeUseCase
 import com.finsim.app.application.usecase.UseCaseResult
 import com.finsim.app.domain.model.Account
 import com.finsim.app.domain.model.FixedIncomeInvestment
+import com.finsim.app.domain.model.FixedIncomeProductType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,16 +22,11 @@ data class FixedIncomeUiState(
     val account: Account? = null,
     val investments: List<FixedIncomeInvestment> = emptyList(),
     val inputAmount: String = "",
+    val selectedProduct: FixedIncomeProductType = FixedIncomeProductType.TESOURO_SELIC_SIMULADO,
     val isLoading: Boolean = true,
     val message: String? = null,
 )
 
-/**
- * ViewModel da tela de renda fixa.
- *
- * Observa o estado via [GetMonthSummaryUseCase] e delega a aplicação
- * ao [InvestInFixedIncomeUseCase]. Sem lógica financeira na camada de UI.
- */
 @HiltViewModel
 class FixedIncomeViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
@@ -66,6 +62,10 @@ class FixedIncomeViewModel @Inject constructor(
         }
     }
 
+    fun selectProduct(product: FixedIncomeProductType) {
+        _uiState.update { it.copy(selectedProduct = product, message = null) }
+    }
+
     fun updateInputAmount(value: String) {
         val filtered = value.filter { it.isDigit() }
         _uiState.update { it.copy(inputAmount = filtered, message = null) }
@@ -74,9 +74,10 @@ class FixedIncomeViewModel @Inject constructor(
     fun invest() {
         val account = _uiState.value.account ?: return
         val amountInCents = _uiState.value.inputAmount.toLongOrNull()?.times(100L) ?: 0L
+        val product = _uiState.value.selectedProduct
 
         viewModelScope.launch {
-            when (val result = investInFixedIncomeUseCase(account, amountInCents, profileId, currentMonth)) {
+            when (val result = investInFixedIncomeUseCase(account, amountInCents, profileId, currentMonth, product)) {
                 is UseCaseResult.Success -> {
                     _uiState.update {
                         it.copy(

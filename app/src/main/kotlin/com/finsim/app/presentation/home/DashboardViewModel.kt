@@ -7,6 +7,7 @@ import com.finsim.app.application.usecase.AdvanceMonthUseCase
 import com.finsim.app.application.usecase.GetMonthSummaryUseCase
 import com.finsim.app.application.usecase.MonthSummary
 import com.finsim.app.application.usecase.UseCaseResult
+import com.finsim.app.domain.model.RandomEvent
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,14 +22,9 @@ data class DashboardUiState(
     val isLoading: Boolean = true,
     val isAdvancingMonth: Boolean = false,
     val monthAdvanceMessage: String? = null,
+    val randomEvent: RandomEvent? = null,
 )
 
-/**
- * ViewModel do Dashboard.
- *
- * Observa [GetMonthSummaryUseCase] de forma reativa e expõe
- * [advanceMonth] para acionar a passagem de mês simulado.
- */
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
@@ -61,10 +57,16 @@ class DashboardViewModel @Inject constructor(
 
             when (val result = advanceMonthUseCase(profileId)) {
                 is UseCaseResult.Success -> {
-                    val snapshot = result.data
-                    val score = snapshot.financialHealthScore
+                    val advanceResult = result.data
+                    val score = advanceResult.snapshot.financialHealthScore
                     val message = buildAdvanceMessage(score)
-                    _uiState.update { it.copy(isAdvancingMonth = false, monthAdvanceMessage = message) }
+                    _uiState.update {
+                        it.copy(
+                            isAdvancingMonth = false,
+                            monthAdvanceMessage = message,
+                            randomEvent = advanceResult.randomEvent,
+                        )
+                    }
                 }
                 is UseCaseResult.Failure -> {
                     _uiState.update {
@@ -76,7 +78,7 @@ class DashboardViewModel @Inject constructor(
     }
 
     fun clearMonthAdvanceMessage() {
-        _uiState.update { it.copy(monthAdvanceMessage = null) }
+        _uiState.update { it.copy(monthAdvanceMessage = null, randomEvent = null) }
     }
 
     private fun buildAdvanceMessage(score: Int): String = when {

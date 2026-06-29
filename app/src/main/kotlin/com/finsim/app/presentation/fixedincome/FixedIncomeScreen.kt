@@ -13,11 +13,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -37,17 +39,12 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.finsim.app.domain.model.FixedIncomeInvestment
+import com.finsim.app.domain.model.FixedIncomeProductType
 import com.finsim.app.presentation.common.EducationalMessage
 import com.finsim.app.presentation.common.FinSimButton
 import com.finsim.app.presentation.common.FinSimCard
 import com.finsim.app.presentation.common.toCurrency
 
-/**
- * Tela de renda fixa simulada.
- *
- * Exibe informações do Tesouro Selic simulado, lista as aplicações ativas
- * e permite realizar novas aplicações. Contém aviso obrigatório de simulação.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FixedIncomeScreen(
@@ -106,39 +103,40 @@ fun FixedIncomeScreen(
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            item { Spacer(modifier = Modifier.height(8.dp)) }
+
+            // Seletor de produto
             item {
-                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Escolha um produto:",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                )
             }
 
-            // Aviso obrigatório de simulação
             item {
-                FinSimCard(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = "Tesouro Selic Simulado",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "Taxa: 0,8% ao mês (simulação educativa)",
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
-                        Text(
-                            text = "Liquidez: diária — você pode resgatar a qualquer mês",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "Aviso: isto é uma simulacao. Nao representa investimento real.",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.tertiary,
-                            fontWeight = FontWeight.SemiBold,
-                        )
-                    }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    ProductTab(
+                        label = "Tesouro Selic",
+                        isSelected = uiState.selectedProduct == FixedIncomeProductType.TESOURO_SELIC_SIMULADO,
+                        onClick = { viewModel.selectProduct(FixedIncomeProductType.TESOURO_SELIC_SIMULADO) },
+                        modifier = Modifier.weight(1f),
+                    )
+                    ProductTab(
+                        label = "CDB",
+                        isSelected = uiState.selectedProduct == FixedIncomeProductType.CDB_SIMULADO,
+                        onClick = { viewModel.selectProduct(FixedIncomeProductType.CDB_SIMULADO) },
+                        modifier = Modifier.weight(1f),
+                    )
                 }
+            }
+
+            // Info do produto selecionado
+            item {
+                ProductInfoCard(product = uiState.selectedProduct)
             }
 
             // Saldo disponível
@@ -147,7 +145,7 @@ fun FixedIncomeScreen(
                     FinSimCard(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Text(
-                                text = "Saldo disponível para aplicar",
+                                text = "Saldo disponível",
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                             )
@@ -197,31 +195,102 @@ fun FixedIncomeScreen(
             } else {
                 item {
                     EducationalMessage(
-                        message = "Você ainda não tem aplicações. Investir regularmente é um hábito que faz diferença no longo prazo.",
+                        message = "Você ainda não tem aplicações. Investir regularmente, mesmo que pequenos valores, faz diferença no longo prazo.",
                     )
                 }
             }
 
             item {
                 EducationalMessage(
-                    message = "O Tesouro Selic real é um título público federal com liquidez diária. Na vida real, as taxas variam conforme a Selic definida pelo Banco Central.",
+                    message = "Simulação educativa. Os valores e taxas são fictícios e não representam investimentos reais ou recomendação financeira.",
                 )
             }
 
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-            }
+            item { Spacer(modifier = Modifier.height(16.dp)) }
         }
     }
 }
 
 @Composable
-private fun InvestmentCard(investment: FixedIncomeInvestment) {
-    val earnings = investment.currentAmount - investment.investedAmount
+private fun ProductTab(
+    label: String,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    OutlinedButton(
+        onClick = onClick,
+        modifier = modifier,
+        colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
+            contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,
+        ),
+    ) {
+        Text(text = label, style = MaterialTheme.typography.labelMedium)
+    }
+}
+
+@Composable
+private fun ProductInfoCard(product: FixedIncomeProductType) {
+    val (title, rate, liquidity, educational) = when (product) {
+        FixedIncomeProductType.TESOURO_SELIC_SIMULADO -> ProductInfo(
+            title = "Tesouro Selic Simulado",
+            rate = "0,8% ao mês",
+            liquidity = "Diária — resgate a qualquer mês",
+            educational = "O Tesouro Selic real acompanha a taxa básica de juros (Selic) definida pelo Banco Central. É considerado um dos investimentos mais seguros do Brasil, pois é garantido pelo governo.",
+        )
+        FixedIncomeProductType.CDB_SIMULADO -> ProductInfo(
+            title = "CDB Simulado",
+            rate = "0,9% ao mês",
+            liquidity = "Diária — resgate a qualquer mês",
+            educational = "O CDB (Certificado de Depósito Bancário) é emitido por bancos e costuma pagar uma taxa um pouco maior que o Tesouro Selic. Em troca, você assume um pequeno risco do banco — por isso o retorno maior.",
+        )
+    }
+
     FinSimCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = "Tesouro Selic Simulado",
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(text = "Taxa simulada: $rate", style = MaterialTheme.typography.bodyMedium)
+            Text(
+                text = "Liquidez: $liquidity",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = educational,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+            )
+        }
+    }
+}
+
+private data class ProductInfo(
+    val title: String,
+    val rate: String,
+    val liquidity: String,
+    val educational: String,
+)
+
+@Composable
+private fun InvestmentCard(investment: FixedIncomeInvestment) {
+    val earnings = investment.currentAmount - investment.investedAmount
+    val productName = when (investment.productType) {
+        FixedIncomeProductType.TESOURO_SELIC_SIMULADO -> "Tesouro Selic Simulado"
+        FixedIncomeProductType.CDB_SIMULADO -> "CDB Simulado"
+    }
+
+    FinSimCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = productName,
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
             )
@@ -265,7 +334,7 @@ private fun InvestmentCard(investment: FixedIncomeInvestment) {
                 )
             }
             Text(
-                text = "Inicio: mes ${investment.startMonth} | Liquidez diaria",
+                text = "Início: mês ${investment.startMonth} | ${investment.monthlyRateBps / 100.0}% ao mês",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
             )

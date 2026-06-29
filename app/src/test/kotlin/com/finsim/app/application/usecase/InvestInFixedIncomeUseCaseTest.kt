@@ -158,4 +158,48 @@ class InvestInFixedIncomeUseCaseTest {
 
         assertEquals(null, result.data.maturityMonth)
     }
+
+    // --- CDB Simulado ---
+
+    @Test
+    fun `CDB deve usar taxa de 90 bps`() = runTest {
+        coEvery { investmentRepository.save(any()) } returns 6L
+        coEvery { transactionRepository.save(any()) } returns 1L
+
+        val account = buildAccount(balance = 200_000L)
+
+        val result = useCase(
+            account, amount = 100_000L, profileId = 1L, currentMonth = 3,
+            productType = FixedIncomeProductType.CDB_SIMULADO
+        ) as UseCaseResult.Success
+
+        assertEquals(90, result.data.monthlyRateBps)
+    }
+
+    @Test
+    fun `CDB deve registrar produto como CDB_SIMULADO`() = runTest {
+        coEvery { investmentRepository.save(any()) } returns 6L
+        coEvery { transactionRepository.save(any()) } returns 1L
+
+        val account = buildAccount(balance = 200_000L)
+
+        val result = useCase(
+            account, amount = 100_000L, profileId = 1L, currentMonth = 1,
+            productType = FixedIncomeProductType.CDB_SIMULADO
+        ) as UseCaseResult.Success
+
+        assertEquals(FixedIncomeProductType.CDB_SIMULADO, result.data.productType)
+    }
+
+    @Test
+    fun `CDB com saldo insuficiente deve retornar Failure`() = runTest {
+        val account = buildAccount(balance = 5_000L)
+
+        val result = useCase(
+            account, amount = 10_000L, profileId = 1L, currentMonth = 1,
+            productType = FixedIncomeProductType.CDB_SIMULADO
+        )
+
+        assertIs<UseCaseResult.Failure>(result)
+    }
 }

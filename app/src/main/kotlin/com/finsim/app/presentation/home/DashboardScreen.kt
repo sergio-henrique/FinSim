@@ -52,10 +52,33 @@ fun DashboardScreen(
     val uiState by viewModel.uiState.collectAsState()
 
     uiState.monthAdvanceMessage?.let { message ->
+        val event = uiState.randomEvent
         AlertDialog(
             onDismissRequest = viewModel::clearMonthAdvanceMessage,
-            title = { Text("Fim do mês") },
-            text = { Text(message) },
+            title = { Text(if (event != null) "Fim do mês — Imprevisto!" else "Fim do mês") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (event != null) {
+                        Text(
+                            text = "⚠ ${event.title}",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        Text(text = event.description)
+                        Text(
+                            text = "Custo: R$ ${event.amountCents / 100}",
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.tertiary,
+                        )
+                        Text(
+                            text = event.educationalMessage,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                        HorizontalDivider()
+                    }
+                    Text(text = message)
+                }
+            },
             confirmButton = {
                 TextButton(onClick = viewModel::clearMonthAdvanceMessage) {
                     Text("Entendido")
