@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        Tema base para a Activity — usa Theme.Material3 sem ActionBar
+        para que o Compose controle toda a UI via FinSimTheme.
+    -->
+    <!-- Tema mínimo do framework Android — Compose controla todo o visual via FinSimTheme -->
+    <style name="Theme.FinSim" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>

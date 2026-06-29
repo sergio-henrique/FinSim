@@ -1,0 +1,12 @@
+# Normalizar line endings para LF no repositório
+* text=auto eol=lf
+
+# Binários
+*.jar binary
+*.apk binary
+*.aab binary
+*.png binary
+*.jpg binary
+*.webp binary
+*.keystore binary
+gradle/wrapper/gradle-wrapper.jar binary
