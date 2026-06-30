@@ -8,6 +8,7 @@ import com.finsim.app.application.usecase.GetMonthSummaryUseCase
 import com.finsim.app.application.usecase.MonthSummary
 import com.finsim.app.application.usecase.UseCaseResult
 import com.finsim.app.domain.model.Achievement
+import com.finsim.app.domain.model.Challenge
 import com.finsim.app.domain.model.MarketEvent
 import com.finsim.app.domain.model.RandomEvent
 import com.finsim.app.simulation.missions.MissionCatalog
@@ -30,6 +31,8 @@ data class DashboardUiState(
     val dividendsReceivedCents: Long = 0L,
     val newlyCompletedMissionTitles: List<String> = emptyList(),
     val newlyUnlockedAchievements: List<Achievement> = emptyList(),
+    val completedChallenges: List<Challenge> = emptyList(),
+    val failedChallenges: List<Challenge> = emptyList(),
 )
 
 @HiltViewModel
@@ -78,6 +81,8 @@ class DashboardViewModel @Inject constructor(
                             dividendsReceivedCents = advanceResult.dividendsReceivedCents,
                             newlyCompletedMissionTitles = missionTitles,
                             newlyUnlockedAchievements = advanceResult.newlyUnlockedAchievements,
+                            completedChallenges = advanceResult.completedChallenges,
+                            failedChallenges = advanceResult.failedChallenges,
                         )
                     }
                 }
@@ -99,6 +104,8 @@ class DashboardViewModel @Inject constructor(
                 dividendsReceivedCents = 0L,
                 newlyCompletedMissionTitles = emptyList(),
                 newlyUnlockedAchievements = emptyList(),
+                completedChallenges = emptyList(),
+                failedChallenges = emptyList(),
             )
         }
     }

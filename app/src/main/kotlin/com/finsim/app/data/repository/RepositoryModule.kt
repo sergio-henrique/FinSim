@@ -1,6 +1,7 @@
 package com.finsim.app.data.repository
 
 import com.finsim.app.domain.repository.AccountRepository
+import com.finsim.app.domain.repository.ChallengeProgressRepository
 import com.finsim.app.domain.repository.BillRepository
 import com.finsim.app.domain.repository.FixedIncomeInvestmentRepository
 import com.finsim.app.domain.repository.MonthlySnapshotRepository
@@ -53,4 +54,7 @@ abstract class RepositoryModule {
 
     @Binds @Singleton
     abstract fun bindStockPriceHistoryRepository(impl: StockPriceHistoryRepositoryImpl): StockPriceHistoryRepository
+
+    @Binds @Singleton
+    abstract fun bindChallengeProgressRepository(impl: ChallengeProgressRepositoryImpl): ChallengeProgressRepository
 }

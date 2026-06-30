@@ -8,6 +8,7 @@ import com.finsim.app.data.local.dao.FixedIncomeInvestmentDao
 import com.finsim.app.data.local.dao.MonthlySnapshotDao
 import com.finsim.app.data.local.dao.StockHoldingDao
 import com.finsim.app.data.local.dao.StockPriceDao
+import com.finsim.app.data.local.dao.ChallengeProgressDao
 import com.finsim.app.data.local.dao.StockPriceHistoryDao
 import com.finsim.app.data.local.dao.TransactionDao
 import com.finsim.app.data.local.dao.UserAchievementRecordDao
@@ -19,6 +20,7 @@ import com.finsim.app.data.local.entity.FixedIncomeInvestmentEntity
 import com.finsim.app.data.local.entity.MonthlySnapshotEntity
 import com.finsim.app.data.local.entity.StockHoldingEntity
 import com.finsim.app.data.local.entity.StockPriceEntity
+import com.finsim.app.data.local.entity.ChallengeProgressEntity
 import com.finsim.app.data.local.entity.StockPriceHistoryEntity
 import com.finsim.app.data.local.entity.TransactionEntity
 import com.finsim.app.data.local.entity.UserAchievementRecordEntity
@@ -44,8 +46,9 @@ import com.finsim.app.data.local.entity.UserProfileEntity
         StockPriceEntity::class,
         StockHoldingEntity::class,
         StockPriceHistoryEntity::class,
+        ChallengeProgressEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = false,
 )
 abstract class FinSimDatabase : RoomDatabase() {
@@ -60,4 +63,5 @@ abstract class FinSimDatabase : RoomDatabase() {
     abstract fun stockPriceDao(): StockPriceDao
     abstract fun stockHoldingDao(): StockHoldingDao
     abstract fun stockPriceHistoryDao(): StockPriceHistoryDao
+    abstract fun challengeProgressDao(): ChallengeProgressDao
 }

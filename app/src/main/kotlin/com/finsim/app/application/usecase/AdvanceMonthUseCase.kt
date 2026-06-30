@@ -1,17 +1,19 @@
 package com.finsim.app.application.usecase
 
 import com.finsim.app.domain.model.Achievement
+import com.finsim.app.domain.model.Challenge
 import com.finsim.app.domain.model.MarketEvent
 import com.finsim.app.domain.model.MonthlySnapshot
 import com.finsim.app.domain.model.RandomEvent
+import com.finsim.app.domain.model.StockPriceHistory
 import com.finsim.app.domain.model.Transaction
 import com.finsim.app.domain.model.TransactionType
 import com.finsim.app.domain.model.UserAchievementRecord
 import com.finsim.app.domain.repository.AccountRepository
 import com.finsim.app.domain.repository.BillRepository
+import com.finsim.app.domain.repository.ChallengeProgressRepository
 import com.finsim.app.domain.repository.FixedIncomeInvestmentRepository
 import com.finsim.app.domain.repository.MonthlySnapshotRepository
-import com.finsim.app.domain.model.StockPriceHistory
 import com.finsim.app.domain.repository.StockHoldingRepository
 import com.finsim.app.domain.repository.StockPriceHistoryRepository
 import com.finsim.app.domain.repository.StockPriceRepository
@@ -20,6 +22,8 @@ import com.finsim.app.domain.repository.UserAchievementRepository
 import com.finsim.app.domain.repository.UserMissionRepository
 import com.finsim.app.domain.repository.UserProfileRepository
 import com.finsim.app.domain.rule.FinancialRules
+import com.finsim.app.simulation.challenges.ChallengeCatalog
+import com.finsim.app.simulation.challenges.ChallengeEngine
 import com.finsim.app.simulation.economy.MonthAdvanceEngine
 import com.finsim.app.simulation.missions.AchievementEngine
 import com.finsim.app.simulation.missions.MissionEngine
@@ -38,6 +42,8 @@ data class AdvanceMonthResult(
     val newlyCompletedMissions: List<String>,
     val newlyUnlockedAchievements: List<Achievement>,
     val dividendsReceivedCents: Long,
+    val completedChallenges: List<Challenge> = emptyList(),
+    val failedChallenges: List<Challenge> = emptyList(),
 )
 
 /**
@@ -66,6 +72,7 @@ class AdvanceMonthUseCase @Inject constructor(
     private val stockPriceRepository: StockPriceRepository,
     private val stockHoldingRepository: StockHoldingRepository,
     private val stockPriceHistoryRepository: StockPriceHistoryRepository,
+    private val challengeProgressRepository: ChallengeProgressRepository,
 ) {
 
     suspend operator fun invoke(profileId: Long): UseCaseResult<AdvanceMonthResult> {
@@ -243,6 +250,29 @@ class AdvanceMonthUseCase @Inject constructor(
             )
         }
 
+        // Desafios: avaliar progresso de todos os desafios ativos
+        val activeProgressList = challengeProgressRepository.getActiveByProfileId(profileId)
+        val challengeState = ChallengeEngine.MonthEndState(
+            currentMonth = engineResult.newMonth,
+            reserveBalanceCents = finalAccount.emergencyReserveBalance,
+            totalWealthCents = totalWealth,
+        )
+        val completedChallenges = mutableListOf<Challenge>()
+        val failedChallenges = mutableListOf<Challenge>()
+
+        activeProgressList.forEach { progress ->
+            val challenge = ChallengeCatalog.getById(progress.challengeId) ?: return@forEach
+            val updated = ChallengeEngine.evaluate(challenge, progress, challengeState)
+            if (updated != progress) {
+                challengeProgressRepository.update(updated.copy(id = progress.id))
+                when (updated.status) {
+                    com.finsim.app.domain.model.ChallengeStatus.COMPLETED -> completedChallenges.add(challenge)
+                    com.finsim.app.domain.model.ChallengeStatus.FAILED -> failedChallenges.add(challenge)
+                    else -> Unit
+                }
+            }
+        }
+
         return UseCaseResult.Success(
             AdvanceMonthResult(
                 snapshot = snapshot,
@@ -251,6 +281,8 @@ class AdvanceMonthUseCase @Inject constructor(
                 newlyCompletedMissions = newlyCompleted.map { it.missionId },
                 newlyUnlockedAchievements = newAchievements,
                 dividendsReceivedCents = totalDividends,
+                completedChallenges = completedChallenges,
+                failedChallenges = failedChallenges,
             )
         )
     }

@@ -45,6 +45,7 @@ fun DashboardScreen(
     onNavigateToStockMarket: () -> Unit,
     onNavigateToHistory: () -> Unit,
     onNavigateToRanking: () -> Unit,
+    onNavigateToChallenges: () -> Unit,
     onNavigateToProfileSelector: () -> Unit,
     viewModel: DashboardViewModel = hiltViewModel(),
 ) {
@@ -55,6 +56,8 @@ fun DashboardScreen(
         val marketEvent = uiState.marketEvent
         val missions = uiState.newlyCompletedMissionTitles
         val achievements = uiState.newlyUnlockedAchievements
+        val completedChallenges = uiState.completedChallenges
+        val failedChallenges = uiState.failedChallenges
         val dividends = uiState.dividendsReceivedCents
         val hasImprevisto = randomEvent != null
         val hasMarketEvent = marketEvent != null
@@ -129,6 +132,34 @@ fun DashboardScreen(
                             color = MaterialTheme.colorScheme.tertiary,
                         )
                         achievements.forEach { a -> Text("${a.emoji} ${a.title}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.tertiary) }
+                    }
+
+                    if (completedChallenges.isNotEmpty()) {
+                        HorizontalDivider()
+                        Text(
+                            text = "Desafio concluído!",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.secondary,
+                        )
+                        completedChallenges.forEach { c ->
+                            Text("${c.emoji} ${c.title}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
+                            Text(c.educationalMessage, style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+
+                    if (failedChallenges.isNotEmpty()) {
+                        HorizontalDivider()
+                        Text(
+                            text = "Desafio encerrado sem êxito:",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                        failedChallenges.forEach { c ->
+                            Text("${c.emoji} ${c.title}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                            Text("Não desanime — cada tentativa é um aprendizado. Tente novamente!", style = MaterialTheme.typography.bodySmall)
+                        }
                     }
                 }
             },
@@ -316,6 +347,17 @@ fun DashboardScreen(
                     onClick = onNavigateToHistory,
                     modifier = Modifier.weight(1f),
                 )
+                FinSimButton(
+                    text = "Desafios",
+                    onClick = onNavigateToChallenges,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 FinSimButton(
                     text = "Ranking",
                     onClick = onNavigateToRanking,

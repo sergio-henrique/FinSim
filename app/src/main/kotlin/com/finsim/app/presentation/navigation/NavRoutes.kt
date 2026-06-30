@@ -45,4 +45,8 @@ sealed class NavRoutes(val route: String) {
     }
 
     data object Ranking : NavRoutes("ranking")
+
+    data object Challenges : NavRoutes("challenges/{profileId}") {
+        fun createRoute(profileId: Long) = "challenges/$profileId"
+    }
 }
