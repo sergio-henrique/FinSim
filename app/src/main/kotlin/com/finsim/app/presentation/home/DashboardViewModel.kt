@@ -8,6 +8,7 @@ import com.finsim.app.application.usecase.GetMonthSummaryUseCase
 import com.finsim.app.application.usecase.MonthSummary
 import com.finsim.app.application.usecase.UseCaseResult
 import com.finsim.app.domain.model.Achievement
+import com.finsim.app.domain.model.MarketEvent
 import com.finsim.app.domain.model.RandomEvent
 import com.finsim.app.simulation.missions.MissionCatalog
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -25,6 +26,8 @@ data class DashboardUiState(
     val isAdvancingMonth: Boolean = false,
     val monthAdvanceMessage: String? = null,
     val randomEvent: RandomEvent? = null,
+    val marketEvent: MarketEvent? = null,
+    val dividendsReceivedCents: Long = 0L,
     val newlyCompletedMissionTitles: List<String> = emptyList(),
     val newlyUnlockedAchievements: List<Achievement> = emptyList(),
 )
@@ -71,6 +74,8 @@ class DashboardViewModel @Inject constructor(
                             isAdvancingMonth = false,
                             monthAdvanceMessage = buildAdvanceMessage(score),
                             randomEvent = advanceResult.randomEvent,
+                            marketEvent = advanceResult.marketEvent,
+                            dividendsReceivedCents = advanceResult.dividendsReceivedCents,
                             newlyCompletedMissionTitles = missionTitles,
                             newlyUnlockedAchievements = advanceResult.newlyUnlockedAchievements,
                         )
@@ -90,6 +95,8 @@ class DashboardViewModel @Inject constructor(
             it.copy(
                 monthAdvanceMessage = null,
                 randomEvent = null,
+                marketEvent = null,
+                dividendsReceivedCents = 0L,
                 newlyCompletedMissionTitles = emptyList(),
                 newlyUnlockedAchievements = emptyList(),
             )

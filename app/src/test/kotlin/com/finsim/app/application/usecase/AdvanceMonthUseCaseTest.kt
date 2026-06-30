@@ -13,6 +13,8 @@ import com.finsim.app.domain.repository.BillRepository
 import com.finsim.app.domain.repository.FixedIncomeInvestmentRepository
 import com.finsim.app.domain.repository.MonthlySnapshotRepository
 import com.finsim.app.domain.repository.TransactionRepository
+import com.finsim.app.domain.repository.StockHoldingRepository
+import com.finsim.app.domain.repository.StockPriceRepository
 import com.finsim.app.domain.repository.UserAchievementRepository
 import com.finsim.app.domain.repository.UserMissionRepository
 import com.finsim.app.domain.repository.UserProfileRepository
@@ -36,6 +38,8 @@ class AdvanceMonthUseCaseTest {
     private val snapshotRepository: MonthlySnapshotRepository = mockk(relaxed = true)
     private val userMissionRepository: UserMissionRepository = mockk(relaxed = true)
     private val userAchievementRepository: UserAchievementRepository = mockk(relaxed = true)
+    private val stockPriceRepository: StockPriceRepository = mockk(relaxed = true)
+    private val stockHoldingRepository: StockHoldingRepository = mockk(relaxed = true)
 
     private val useCase = AdvanceMonthUseCase(
         userProfileRepository = userProfileRepository,
@@ -46,6 +50,8 @@ class AdvanceMonthUseCaseTest {
         snapshotRepository = snapshotRepository,
         userMissionRepository = userMissionRepository,
         userAchievementRepository = userAchievementRepository,
+        stockPriceRepository = stockPriceRepository,
+        stockHoldingRepository = stockHoldingRepository,
     )
 
     private fun buildProfile(currentMonth: Int = 1) = UserProfile(
@@ -103,6 +109,8 @@ class AdvanceMonthUseCaseTest {
         coEvery { snapshotRepository.save(any()) } returns 1L
         coEvery { userMissionRepository.getByProfileId(1L) } returns flowOf(emptyList())
         coEvery { userAchievementRepository.getByProfileId(1L) } returns flowOf(emptyList())
+        coEvery { stockPriceRepository.getAll() } returns flowOf(emptyList())
+        coEvery { stockHoldingRepository.getByProfileId(1L) } returns flowOf(emptyList())
     }
 
     @Test

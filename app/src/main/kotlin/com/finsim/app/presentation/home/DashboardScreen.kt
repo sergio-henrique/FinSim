@@ -42,35 +42,64 @@ fun DashboardScreen(
     onNavigateToFixedIncome: () -> Unit,
     onNavigateToSummary: () -> Unit,
     onNavigateToProgress: () -> Unit,
+    onNavigateToStockMarket: () -> Unit,
     viewModel: DashboardViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
     uiState.monthAdvanceMessage?.let { message ->
-        val event = uiState.randomEvent
+        val randomEvent = uiState.randomEvent
+        val marketEvent = uiState.marketEvent
         val missions = uiState.newlyCompletedMissionTitles
         val achievements = uiState.newlyUnlockedAchievements
+        val dividends = uiState.dividendsReceivedCents
+        val hasImprevisto = randomEvent != null
+        val hasMarketEvent = marketEvent != null
+
+        val title = when {
+            hasImprevisto && hasMarketEvent -> "Fim do mês — Imprevisto + Mercado"
+            hasImprevisto -> "Fim do mês — Imprevisto!"
+            hasMarketEvent -> "Fim do mês — Evento de Mercado"
+            else -> "Fim do mês"
+        }
 
         AlertDialog(
             onDismissRequest = viewModel::clearMonthAdvanceMessage,
-            title = { Text(if (event != null) "Fim do mês — Imprevisto!" else "Fim do mês") },
+            title = { Text(title) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (event != null) {
+                    if (randomEvent != null) {
                         Text(
-                            text = "⚠ ${event.title}",
+                            text = "⚠ ${randomEvent.title}",
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold,
                         )
-                        Text(text = event.description)
+                        Text(text = randomEvent.description)
                         Text(
-                            text = "Custo: R$ ${event.amountCents / 100}",
+                            text = "Custo: R$ ${randomEvent.amountCents / 100}",
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.tertiary,
                         )
+                        Text(text = randomEvent.educationalMessage, style = MaterialTheme.typography.bodySmall)
+                        HorizontalDivider()
+                    }
+
+                    if (marketEvent != null) {
                         Text(
-                            text = event.educationalMessage,
+                            text = "📈 ${marketEvent.title}",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        Text(text = marketEvent.description)
+                        Text(text = marketEvent.educationalMessage, style = MaterialTheme.typography.bodySmall)
+                        HorizontalDivider()
+                    }
+
+                    if (dividends > 0) {
+                        Text(
+                            text = "💰 Dividendos recebidos: R$ ${dividends / 100}",
                             style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.secondary,
                         )
                         HorizontalDivider()
                     }
@@ -85,13 +114,7 @@ fun DashboardScreen(
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.primary,
                         )
-                        missions.forEach { title ->
-                            Text(
-                                text = "✓ $title",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.primary,
-                            )
-                        }
+                        missions.forEach { t -> Text("✓ $t", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary) }
                     }
 
                     if (achievements.isNotEmpty()) {
@@ -102,20 +125,12 @@ fun DashboardScreen(
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.tertiary,
                         )
-                        achievements.forEach { achievement ->
-                            Text(
-                                text = "${achievement.emoji} ${achievement.title}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.tertiary,
-                            )
-                        }
+                        achievements.forEach { a -> Text("${a.emoji} ${a.title}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.tertiary) }
                     }
                 }
             },
             confirmButton = {
-                TextButton(onClick = viewModel::clearMonthAdvanceMessage) {
-                    Text("Entendido")
-                }
+                TextButton(onClick = viewModel::clearMonthAdvanceMessage) { Text("Entendido") }
             },
         )
     }
@@ -267,17 +282,27 @@ fun DashboardScreen(
                     modifier = Modifier.weight(1f),
                 )
                 FinSimButton(
-                    text = "Resumo",
-                    onClick = onNavigateToSummary,
+                    text = "Ações",
+                    onClick = onNavigateToStockMarket,
                     modifier = Modifier.weight(1f),
                 )
             }
 
-            FinSimButton(
-                text = "Missões e conquistas",
-                onClick = onNavigateToProgress,
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-            )
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                FinSimButton(
+                    text = "Resumo",
+                    onClick = onNavigateToSummary,
+                    modifier = Modifier.weight(1f),
+                )
+                FinSimButton(
+                    text = "Missões",
+                    onClick = onNavigateToProgress,
+                    modifier = Modifier.weight(1f),
+                )
+            }
 
             FinSimButton(
                 text = "Avançar mês",

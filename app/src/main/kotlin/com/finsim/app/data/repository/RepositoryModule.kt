@@ -5,6 +5,8 @@ import com.finsim.app.domain.repository.BillRepository
 import com.finsim.app.domain.repository.FixedIncomeInvestmentRepository
 import com.finsim.app.domain.repository.MonthlySnapshotRepository
 import com.finsim.app.domain.repository.TransactionRepository
+import com.finsim.app.domain.repository.StockHoldingRepository
+import com.finsim.app.domain.repository.StockPriceRepository
 import com.finsim.app.domain.repository.UserAchievementRepository
 import com.finsim.app.domain.repository.UserMissionRepository
 import com.finsim.app.domain.repository.UserProfileRepository
@@ -41,4 +43,10 @@ abstract class RepositoryModule {
 
     @Binds @Singleton
     abstract fun bindUserAchievementRepository(impl: UserAchievementRepositoryImpl): UserAchievementRepository
+
+    @Binds @Singleton
+    abstract fun bindStockPriceRepository(impl: StockPriceRepositoryImpl): StockPriceRepository
+
+    @Binds @Singleton
+    abstract fun bindStockHoldingRepository(impl: StockHoldingRepositoryImpl): StockHoldingRepository
 }

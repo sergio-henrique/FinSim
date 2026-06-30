@@ -6,6 +6,8 @@ import com.finsim.app.data.local.dao.AccountDao
 import com.finsim.app.data.local.dao.BillDao
 import com.finsim.app.data.local.dao.FixedIncomeInvestmentDao
 import com.finsim.app.data.local.dao.MonthlySnapshotDao
+import com.finsim.app.data.local.dao.StockHoldingDao
+import com.finsim.app.data.local.dao.StockPriceDao
 import com.finsim.app.data.local.dao.TransactionDao
 import com.finsim.app.data.local.dao.UserAchievementRecordDao
 import com.finsim.app.data.local.dao.UserMissionProgressDao
@@ -67,4 +69,10 @@ object DatabaseModule {
     @Provides
     fun provideUserAchievementRecordDao(db: FinSimDatabase): UserAchievementRecordDao =
         db.userAchievementRecordDao()
+
+    @Provides
+    fun provideStockPriceDao(db: FinSimDatabase): StockPriceDao = db.stockPriceDao()
+
+    @Provides
+    fun provideStockHoldingDao(db: FinSimDatabase): StockHoldingDao = db.stockHoldingDao()
 }

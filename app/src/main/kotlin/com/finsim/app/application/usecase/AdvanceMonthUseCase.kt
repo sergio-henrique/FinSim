@@ -1,6 +1,7 @@
 package com.finsim.app.application.usecase
 
 import com.finsim.app.domain.model.Achievement
+import com.finsim.app.domain.model.MarketEvent
 import com.finsim.app.domain.model.MonthlySnapshot
 import com.finsim.app.domain.model.RandomEvent
 import com.finsim.app.domain.model.Transaction
@@ -10,6 +11,8 @@ import com.finsim.app.domain.repository.AccountRepository
 import com.finsim.app.domain.repository.BillRepository
 import com.finsim.app.domain.repository.FixedIncomeInvestmentRepository
 import com.finsim.app.domain.repository.MonthlySnapshotRepository
+import com.finsim.app.domain.repository.StockHoldingRepository
+import com.finsim.app.domain.repository.StockPriceRepository
 import com.finsim.app.domain.repository.TransactionRepository
 import com.finsim.app.domain.repository.UserAchievementRepository
 import com.finsim.app.domain.repository.UserMissionRepository
@@ -18,32 +21,36 @@ import com.finsim.app.domain.rule.FinancialRules
 import com.finsim.app.simulation.economy.MonthAdvanceEngine
 import com.finsim.app.simulation.missions.AchievementEngine
 import com.finsim.app.simulation.missions.MissionEngine
+import com.finsim.app.simulation.variableincome.MarketEventEngine
+import com.finsim.app.simulation.variableincome.StockMarketEngine
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 
 /**
- * Resultado enriquecido da passagem de mês — inclui o snapshot, o evento
- * aleatório, missões recém-concluídas e conquistas desbloqueadas.
+ * Resultado enriquecido da passagem de mês.
  */
 data class AdvanceMonthResult(
     val snapshot: MonthlySnapshot,
     val randomEvent: RandomEvent?,
+    val marketEvent: MarketEvent?,
     val newlyCompletedMissions: List<String>,
     val newlyUnlockedAchievements: List<Achievement>,
+    val dividendsReceivedCents: Long,
 )
 
 /**
  * Caso de uso: Avançar o mês simulado.
  *
  * Ordem de processamento (RN-010):
- *   1. Rendimento dos investimentos.
- *   2. Crédito da renda mensal.
- *   3. Geração das contas com inflação.
- *   4. Evento financeiro aleatório.
- *   5. Persistência de todos os estados.
- *   6. Score de saúde financeira.
- *   7. Snapshot mensal.
- *   8. Avaliação de missões e conquistas.
+ *   1. Rendimento dos investimentos de renda fixa.
+ *   2. Evento de mercado de renda variável.
+ *   3. Atualização de preços das ações.
+ *   4. Pagamento de dividendos.
+ *   5. Crédito da renda mensal e evento financeiro aleatório.
+ *   6. Geração das contas com inflação.
+ *   7. Persistência de todos os estados.
+ *   8. Score de saúde financeira e snapshot mensal.
+ *   9. Avaliação de missões e conquistas.
  */
 class AdvanceMonthUseCase @Inject constructor(
     private val userProfileRepository: UserProfileRepository,
@@ -54,6 +61,8 @@ class AdvanceMonthUseCase @Inject constructor(
     private val snapshotRepository: MonthlySnapshotRepository,
     private val userMissionRepository: UserMissionRepository,
     private val userAchievementRepository: UserAchievementRepository,
+    private val stockPriceRepository: StockPriceRepository,
+    private val stockHoldingRepository: StockHoldingRepository,
 ) {
 
     suspend operator fun invoke(profileId: Long): UseCaseResult<AdvanceMonthResult> {
@@ -69,6 +78,7 @@ class AdvanceMonthUseCase @Inject constructor(
             .getByProfileIdAndMonth(profileId, profile.currentMonth)
             .first()
 
+        // Renda fixa: rendimento mensal
         val engineResult = MonthAdvanceEngine.advance(
             MonthAdvanceEngine.MonthAdvanceInput(
                 profile = profile,
@@ -77,19 +87,52 @@ class AdvanceMonthUseCase @Inject constructor(
                 defaultBillTemplates = currentMonthBills,
             )
         )
-
-        // Persistência: investimentos
         engineResult.updatedInvestments.forEach { investmentRepository.update(it) }
 
-        // Persistência: conta (com possível débito do evento)
+        // Renda variável: evento de mercado + atualização de preços
+        val currentPrices = stockPriceRepository.getAll().first().associateBy { it.ticker }
+        val marketEvent = MarketEventEngine.generate(
+            month = engineResult.newMonth,
+            wasLastMonthCrash = false,
+        )
+        val updatedPrices = StockMarketEngine.updatePrices(
+            currentPrices = currentPrices,
+            currentMonth = engineResult.newMonth,
+            marketEvent = marketEvent,
+        )
+        updatedPrices.forEach { stockPriceRepository.upsert(it) }
+
+        // Dividendos
+        val holdings = stockHoldingRepository.getByProfileId(profileId).first()
+        val newPriceMap = updatedPrices.associateBy { it.ticker }
+        val dividendsMap = StockMarketEngine.calculateAllDividends(holdings, newPriceMap)
+        val totalDividends = dividendsMap.values.sum()
+
         var finalAccount = engineResult.updatedAccount
         val randomEvent = engineResult.randomEvent
         val reserveBeforeEvent = finalAccount.emergencyReserveBalance
 
+        if (totalDividends > 0) {
+            finalAccount = finalAccount.copy(balance = finalAccount.balance + totalDividends)
+            dividendsMap.forEach { (ticker, amount) ->
+                if (amount > 0) {
+                    transactionRepository.save(
+                        Transaction(
+                            accountId = account.id,
+                            type = TransactionType.INCOME,
+                            amount = amount,
+                            description = "Dividendos $ticker",
+                            month = engineResult.newMonth,
+                        )
+                    )
+                }
+            }
+        }
+
+        // Evento financeiro aleatório
         if (randomEvent != null) {
             val eventDebit = randomEvent.amountCents.coerceAtMost(finalAccount.balance)
             finalAccount = finalAccount.copy(balance = finalAccount.balance - eventDebit)
-
             transactionRepository.save(
                 Transaction(
                     accountId = account.id,
@@ -112,17 +155,24 @@ class AdvanceMonthUseCase @Inject constructor(
         val billsPaid = currentMonthBills.filter { it.isPaid }.sumOf { it.amount }
         val billsTotal = currentMonthBills.sumOf { it.amount }
         val fixedIncomeBalance = engineResult.updatedInvestments.sumOf { it.currentAmount }
+        val stockMarketValue = holdings.sumOf { h ->
+            newPriceMap[h.ticker]?.let { p -> h.quantity.toLong() * p.currentPriceCents } ?: 0L
+        }
         val allBillsPaid = billsTotal > 0 && billsPaid >= billsTotal
+
+        val hasAnyInvestment = engineResult.updatedInvestments.isNotEmpty() || holdings.isNotEmpty()
 
         val healthScore = FinancialRules.calculateHealthScore(
             billsPaid = billsPaid,
             billsTotal = billsTotal,
             hasReserve = finalAccount.emergencyReserveBalance > 0,
-            hasInvestment = engineResult.updatedInvestments.isNotEmpty(),
+            hasInvestment = hasAnyInvestment,
             isBalancePositive = finalAccount.balance > 0,
         )
 
-        val totalWealth = finalAccount.balance + finalAccount.emergencyReserveBalance + fixedIncomeBalance
+        val totalWealth = finalAccount.balance + finalAccount.emergencyReserveBalance +
+                fixedIncomeBalance + stockMarketValue
+
         val snapshot = MonthlySnapshot(
             profileId = profileId,
             month = profile.currentMonth,
@@ -136,7 +186,7 @@ class AdvanceMonthUseCase @Inject constructor(
         )
         snapshotRepository.save(snapshot)
 
-        // Avaliação de missões
+        // Missões
         val existingProgress = userMissionRepository.getByProfileId(profileId).first()
         val missionState = MissionEngine.SimulationState(
             profileId = profileId,
@@ -145,7 +195,7 @@ class AdvanceMonthUseCase @Inject constructor(
             totalBillsCount = currentMonthBills.size,
             reserveBalanceCents = finalAccount.emergencyReserveBalance,
             fixedIncomeBalanceCents = fixedIncomeBalance,
-            hasAnyInvestment = engineResult.updatedInvestments.isNotEmpty(),
+            hasAnyInvestment = hasAnyInvestment,
         )
         val missionUpdates = MissionEngine.evaluate(existingProgress, missionState)
         missionUpdates.forEach { updated ->
@@ -158,10 +208,9 @@ class AdvanceMonthUseCase @Inject constructor(
         }
         val newlyCompleted = MissionEngine.newlyCompleted(missionUpdates, engineResult.newMonth)
 
-        // Avaliação de conquistas
+        // Conquistas
         val existingAchievements = userAchievementRepository.getByProfileId(profileId).first()
         val unlockedIds = existingAchievements.map { it.achievementId }.toSet()
-
         val survivedWithReserve = randomEvent != null &&
                 finalAccount.emergencyReserveBalance >= reserveBeforeEvent
 
@@ -170,7 +219,7 @@ class AdvanceMonthUseCase @Inject constructor(
             currentMonth = engineResult.newMonth,
             totalWealthCents = totalWealth,
             reserveBalanceCents = finalAccount.emergencyReserveBalance,
-            hasAnyInvestment = engineResult.updatedInvestments.isNotEmpty(),
+            hasAnyInvestment = hasAnyInvestment,
             allBillsPaidThisMonth = allBillsPaid,
             survivedEventWithReserveIntact = survivedWithReserve,
             newlyCompletedMissions = newlyCompleted,
@@ -190,8 +239,10 @@ class AdvanceMonthUseCase @Inject constructor(
             AdvanceMonthResult(
                 snapshot = snapshot,
                 randomEvent = randomEvent,
+                marketEvent = marketEvent,
                 newlyCompletedMissions = newlyCompleted.map { it.missionId },
                 newlyUnlockedAchievements = newAchievements,
+                dividendsReceivedCents = totalDividends,
             )
         )
     }

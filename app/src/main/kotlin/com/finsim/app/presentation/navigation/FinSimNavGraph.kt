@@ -11,6 +11,7 @@ import com.finsim.app.presentation.fixedincome.FixedIncomeScreen
 import com.finsim.app.presentation.home.DashboardScreen
 import com.finsim.app.presentation.onboarding.OnboardingScreen
 import com.finsim.app.presentation.progress.ProgressScreen
+import com.finsim.app.presentation.stockmarket.StockMarketScreen
 import com.finsim.app.presentation.reserve.ReserveScreen
 import com.finsim.app.presentation.summary.SummaryScreen
 
@@ -51,6 +52,7 @@ fun FinSimNavGraph(navController: NavHostController) {
                 onNavigateToFixedIncome = { navController.navigate(NavRoutes.FixedIncome.createRoute(profileId)) },
                 onNavigateToSummary = { navController.navigate(NavRoutes.MonthlySummary.createRoute(profileId)) },
                 onNavigateToProgress = { navController.navigate(NavRoutes.Progress.createRoute(profileId)) },
+                onNavigateToStockMarket = { navController.navigate(NavRoutes.StockMarket.createRoute(profileId)) },
             )
         }
 
@@ -104,6 +106,16 @@ fun FinSimNavGraph(navController: NavHostController) {
         ) { backStackEntry ->
             val profileId = backStackEntry.arguments?.getLong("profileId") ?: return@composable
             ProgressScreen(
+                onBack = { navController.popBackStack() },
+            )
+        }
+
+        composable(
+            route = NavRoutes.StockMarket.route,
+            arguments = listOf(navArgument("profileId") { type = NavType.LongType }),
+        ) { backStackEntry ->
+            val profileId = backStackEntry.arguments?.getLong("profileId") ?: return@composable
+            StockMarketScreen(
                 onBack = { navController.popBackStack() },
             )
         }
