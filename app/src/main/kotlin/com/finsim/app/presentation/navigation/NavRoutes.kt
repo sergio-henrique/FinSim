@@ -37,4 +37,8 @@ sealed class NavRoutes(val route: String) {
     data object StockMarket : NavRoutes("stockmarket/{profileId}") {
         fun createRoute(profileId: Long) = "stockmarket/$profileId"
     }
+
+    data object TransactionHistory : NavRoutes("history/{profileId}") {
+        fun createRoute(profileId: Long) = "history/$profileId"
+    }
 }

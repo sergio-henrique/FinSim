@@ -8,6 +8,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.finsim.app.presentation.bills.BillsScreen
 import com.finsim.app.presentation.fixedincome.FixedIncomeScreen
+import com.finsim.app.presentation.history.TransactionHistoryScreen
 import com.finsim.app.presentation.home.DashboardScreen
 import com.finsim.app.presentation.onboarding.OnboardingScreen
 import com.finsim.app.presentation.progress.ProgressScreen
@@ -19,10 +20,7 @@ import com.finsim.app.presentation.summary.SummaryScreen
  * Grafo de navegação principal do FinSim.
  *
  * Fluxo padrão:
- *   Onboarding → Dashboard → (Bills | Reserve | FixedIncome | Summary | Progress)
- *
- * Onboarding é removido da pilha ao criar o perfil para que o botão
- * Voltar não leve o usuário de volta ao cadastro.
+ *   Onboarding → Dashboard → (Bills | Reserve | FixedIncome | Summary | Progress | StockMarket | History)
  */
 @Composable
 fun FinSimNavGraph(navController: NavHostController) {
@@ -53,6 +51,7 @@ fun FinSimNavGraph(navController: NavHostController) {
                 onNavigateToSummary = { navController.navigate(NavRoutes.MonthlySummary.createRoute(profileId)) },
                 onNavigateToProgress = { navController.navigate(NavRoutes.Progress.createRoute(profileId)) },
                 onNavigateToStockMarket = { navController.navigate(NavRoutes.StockMarket.createRoute(profileId)) },
+                onNavigateToHistory = { navController.navigate(NavRoutes.TransactionHistory.createRoute(profileId)) },
             )
         }
 
@@ -116,6 +115,16 @@ fun FinSimNavGraph(navController: NavHostController) {
         ) { backStackEntry ->
             val profileId = backStackEntry.arguments?.getLong("profileId") ?: return@composable
             StockMarketScreen(
+                onBack = { navController.popBackStack() },
+            )
+        }
+
+        composable(
+            route = NavRoutes.TransactionHistory.route,
+            arguments = listOf(navArgument("profileId") { type = NavType.LongType }),
+        ) { backStackEntry ->
+            val profileId = backStackEntry.arguments?.getLong("profileId") ?: return@composable
+            TransactionHistoryScreen(
                 onBack = { navController.popBackStack() },
             )
         }

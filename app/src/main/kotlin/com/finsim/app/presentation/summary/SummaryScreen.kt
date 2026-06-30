@@ -34,6 +34,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.finsim.app.presentation.common.EducationalMessage
 import com.finsim.app.presentation.common.FinSimCard
 import com.finsim.app.presentation.common.toCurrency
+import com.finsim.app.presentation.component.LineChart
 
 // Cores definidas localmente para evitar dependência de vals internal do tema
 private val HealthGreen = Color(0xFF34A853)
@@ -148,6 +149,40 @@ fun SummaryScreen(
                         value = summary.totalWealth.toCurrency(),
                         valueColor = MaterialTheme.colorScheme.primary,
                     )
+                }
+            }
+
+            // Gráfico de evolução patrimonial
+            if (uiState.wealthHistory.size >= 2) {
+                FinSimCard(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            "Evolução do patrimônio",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        LineChart(
+                            points = uiState.wealthHistory.map { it.totalWealth.toFloat() },
+                            lineColor = MaterialTheme.colorScheme.primary,
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            Text(
+                                "Mês ${uiState.wealthHistory.first().month}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Text(
+                                "Mês ${uiState.wealthHistory.last().month}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
                 }
             }
 

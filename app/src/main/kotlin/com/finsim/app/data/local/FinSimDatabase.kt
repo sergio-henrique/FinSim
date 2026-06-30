@@ -8,6 +8,7 @@ import com.finsim.app.data.local.dao.FixedIncomeInvestmentDao
 import com.finsim.app.data.local.dao.MonthlySnapshotDao
 import com.finsim.app.data.local.dao.StockHoldingDao
 import com.finsim.app.data.local.dao.StockPriceDao
+import com.finsim.app.data.local.dao.StockPriceHistoryDao
 import com.finsim.app.data.local.dao.TransactionDao
 import com.finsim.app.data.local.dao.UserAchievementRecordDao
 import com.finsim.app.data.local.dao.UserMissionProgressDao
@@ -18,6 +19,7 @@ import com.finsim.app.data.local.entity.FixedIncomeInvestmentEntity
 import com.finsim.app.data.local.entity.MonthlySnapshotEntity
 import com.finsim.app.data.local.entity.StockHoldingEntity
 import com.finsim.app.data.local.entity.StockPriceEntity
+import com.finsim.app.data.local.entity.StockPriceHistoryEntity
 import com.finsim.app.data.local.entity.TransactionEntity
 import com.finsim.app.data.local.entity.UserAchievementRecordEntity
 import com.finsim.app.data.local.entity.UserMissionProgressEntity
@@ -26,11 +28,8 @@ import com.finsim.app.data.local.entity.UserProfileEntity
 /**
  * Banco de dados Room do FinSim.
  *
- * Versão 3 — Sprint 4: adicionadas tabelas de preços e posições de renda variável.
+ * Versão 4 — Sprint 5: adicionada tabela de histórico de preços de ações.
  * fallbackToDestructiveMigration é aceitável enquanto não houver usuários em produção.
- *
- * Todos os valores monetários usam Long (centavos).
- * Nenhum dado pessoal sensível é armazenado neste banco.
  */
 @Database(
     entities = [
@@ -44,8 +43,9 @@ import com.finsim.app.data.local.entity.UserProfileEntity
         UserAchievementRecordEntity::class,
         StockPriceEntity::class,
         StockHoldingEntity::class,
+        StockPriceHistoryEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = false,
 )
 abstract class FinSimDatabase : RoomDatabase() {
@@ -59,4 +59,5 @@ abstract class FinSimDatabase : RoomDatabase() {
     abstract fun userAchievementRecordDao(): UserAchievementRecordDao
     abstract fun stockPriceDao(): StockPriceDao
     abstract fun stockHoldingDao(): StockHoldingDao
+    abstract fun stockPriceHistoryDao(): StockPriceHistoryDao
 }

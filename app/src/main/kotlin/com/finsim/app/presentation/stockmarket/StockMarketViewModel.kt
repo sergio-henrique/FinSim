@@ -5,9 +5,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.finsim.app.application.usecase.BuyStockUseCase
 import com.finsim.app.application.usecase.GetPortfolioUseCase
+import com.finsim.app.application.usecase.GetStockPriceHistoryUseCase
 import com.finsim.app.application.usecase.Portfolio
 import com.finsim.app.application.usecase.SellStockUseCase
 import com.finsim.app.application.usecase.UseCaseResult
+import com.finsim.app.domain.model.StockPriceHistory
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,6 +27,8 @@ data class StockMarketUiState(
     val message: String? = null,
     val selectedTicker: String? = null,
     val quantityInput: String = "1",
+    val priceHistory: List<StockPriceHistory> = emptyList(),
+    val isLoadingHistory: Boolean = false,
 )
 
 @HiltViewModel
@@ -33,6 +37,7 @@ class StockMarketViewModel @Inject constructor(
     private val getPortfolioUseCase: GetPortfolioUseCase,
     private val buyStockUseCase: BuyStockUseCase,
     private val sellStockUseCase: SellStockUseCase,
+    private val getPriceHistoryUseCase: GetStockPriceHistoryUseCase,
 ) : ViewModel() {
 
     private val profileId: Long = checkNotNull(savedStateHandle["profileId"])
@@ -51,15 +56,24 @@ class StockMarketViewModel @Inject constructor(
     }
 
     fun selectTicker(ticker: String) {
-        _uiState.update { it.copy(selectedTicker = ticker, quantityInput = "1") }
+        _uiState.update { it.copy(selectedTicker = ticker, quantityInput = "1", priceHistory = emptyList()) }
+        loadPriceHistory(ticker)
     }
 
     fun clearSelection() {
-        _uiState.update { it.copy(selectedTicker = null, quantityInput = "1") }
+        _uiState.update { it.copy(selectedTicker = null, quantityInput = "1", priceHistory = emptyList()) }
     }
 
     fun onQuantityChanged(value: String) {
         _uiState.update { it.copy(quantityInput = value) }
+    }
+
+    private fun loadPriceHistory(ticker: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoadingHistory = true) }
+            val history = getPriceHistoryUseCase(ticker)
+            _uiState.update { it.copy(priceHistory = history, isLoadingHistory = false) }
+        }
     }
 
     fun buy() {

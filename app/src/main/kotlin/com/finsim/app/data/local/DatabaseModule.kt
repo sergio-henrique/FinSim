@@ -8,6 +8,7 @@ import com.finsim.app.data.local.dao.FixedIncomeInvestmentDao
 import com.finsim.app.data.local.dao.MonthlySnapshotDao
 import com.finsim.app.data.local.dao.StockHoldingDao
 import com.finsim.app.data.local.dao.StockPriceDao
+import com.finsim.app.data.local.dao.StockPriceHistoryDao
 import com.finsim.app.data.local.dao.TransactionDao
 import com.finsim.app.data.local.dao.UserAchievementRecordDao
 import com.finsim.app.data.local.dao.UserMissionProgressDao
@@ -75,4 +76,8 @@ object DatabaseModule {
 
     @Provides
     fun provideStockHoldingDao(db: FinSimDatabase): StockHoldingDao = db.stockHoldingDao()
+
+    @Provides
+    fun provideStockPriceHistoryDao(db: FinSimDatabase): StockPriceHistoryDao =
+        db.stockPriceHistoryDao()
 }

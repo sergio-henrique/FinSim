@@ -14,6 +14,7 @@ import com.finsim.app.domain.repository.FixedIncomeInvestmentRepository
 import com.finsim.app.domain.repository.MonthlySnapshotRepository
 import com.finsim.app.domain.repository.TransactionRepository
 import com.finsim.app.domain.repository.StockHoldingRepository
+import com.finsim.app.domain.repository.StockPriceHistoryRepository
 import com.finsim.app.domain.repository.StockPriceRepository
 import com.finsim.app.domain.repository.UserAchievementRepository
 import com.finsim.app.domain.repository.UserMissionRepository
@@ -40,6 +41,7 @@ class AdvanceMonthUseCaseTest {
     private val userAchievementRepository: UserAchievementRepository = mockk(relaxed = true)
     private val stockPriceRepository: StockPriceRepository = mockk(relaxed = true)
     private val stockHoldingRepository: StockHoldingRepository = mockk(relaxed = true)
+    private val stockPriceHistoryRepository: StockPriceHistoryRepository = mockk(relaxed = true)
 
     private val useCase = AdvanceMonthUseCase(
         userProfileRepository = userProfileRepository,
@@ -52,6 +54,7 @@ class AdvanceMonthUseCaseTest {
         userAchievementRepository = userAchievementRepository,
         stockPriceRepository = stockPriceRepository,
         stockHoldingRepository = stockHoldingRepository,
+        stockPriceHistoryRepository = stockPriceHistoryRepository,
     )
 
     private fun buildProfile(currentMonth: Int = 1) = UserProfile(

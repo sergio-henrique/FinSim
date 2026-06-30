@@ -11,7 +11,9 @@ import com.finsim.app.domain.repository.AccountRepository
 import com.finsim.app.domain.repository.BillRepository
 import com.finsim.app.domain.repository.FixedIncomeInvestmentRepository
 import com.finsim.app.domain.repository.MonthlySnapshotRepository
+import com.finsim.app.domain.model.StockPriceHistory
 import com.finsim.app.domain.repository.StockHoldingRepository
+import com.finsim.app.domain.repository.StockPriceHistoryRepository
 import com.finsim.app.domain.repository.StockPriceRepository
 import com.finsim.app.domain.repository.TransactionRepository
 import com.finsim.app.domain.repository.UserAchievementRepository
@@ -63,6 +65,7 @@ class AdvanceMonthUseCase @Inject constructor(
     private val userAchievementRepository: UserAchievementRepository,
     private val stockPriceRepository: StockPriceRepository,
     private val stockHoldingRepository: StockHoldingRepository,
+    private val stockPriceHistoryRepository: StockPriceHistoryRepository,
 ) {
 
     suspend operator fun invoke(profileId: Long): UseCaseResult<AdvanceMonthResult> {
@@ -101,6 +104,11 @@ class AdvanceMonthUseCase @Inject constructor(
             marketEvent = marketEvent,
         )
         updatedPrices.forEach { stockPriceRepository.upsert(it) }
+
+        // Histórico de preços: snapshot do mês atual (IGNORE duplicatas)
+        stockPriceHistoryRepository.saveAll(
+            updatedPrices.map { StockPriceHistory(ticker = it.ticker, month = engineResult.newMonth, priceCents = it.currentPriceCents) }
+        )
 
         // Dividendos
         val holdings = stockHoldingRepository.getByProfileId(profileId).first()

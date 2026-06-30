@@ -43,6 +43,7 @@ fun DashboardScreen(
     onNavigateToSummary: () -> Unit,
     onNavigateToProgress: () -> Unit,
     onNavigateToStockMarket: () -> Unit,
+    onNavigateToHistory: () -> Unit,
     viewModel: DashboardViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -300,6 +301,17 @@ fun DashboardScreen(
                 FinSimButton(
                     text = "Missões",
                     onClick = onNavigateToProgress,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                FinSimButton(
+                    text = "Extrato",
+                    onClick = onNavigateToHistory,
                     modifier = Modifier.weight(1f),
                 )
             }
