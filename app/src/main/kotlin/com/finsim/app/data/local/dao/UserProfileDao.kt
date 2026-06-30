@@ -22,4 +22,7 @@ interface UserProfileDao {
 
     @Query("SELECT * FROM user_profiles ORDER BY createdAt ASC")
     fun getAll(): Flow<List<UserProfileEntity>>
+
+    @Query("DELETE FROM user_profiles WHERE id = :id")
+    suspend fun deleteById(id: Long)
 }

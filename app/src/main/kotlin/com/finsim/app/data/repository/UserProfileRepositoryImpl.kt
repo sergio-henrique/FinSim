@@ -24,6 +24,8 @@ class UserProfileRepositoryImpl @Inject constructor(
 
     override fun getAll(): Flow<List<UserProfile>> =
         dao.getAll().map { list -> list.map { it.toDomain() } }
+
+    override suspend fun deleteById(id: Long) = dao.deleteById(id)
 }
 
 // --- Mappers ---

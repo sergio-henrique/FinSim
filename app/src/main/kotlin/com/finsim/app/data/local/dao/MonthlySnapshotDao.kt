@@ -24,4 +24,7 @@ interface MonthlySnapshotDao {
 
     @Query("SELECT * FROM monthly_snapshots WHERE profileId = :profileId ORDER BY month ASC")
     fun getAllByProfileId(profileId: Long): Flow<List<MonthlySnapshotEntity>>
+
+    @Query("SELECT * FROM monthly_snapshots WHERE profileId = :profileId ORDER BY month DESC LIMIT 1")
+    suspend fun getLatestByProfileId(profileId: Long): MonthlySnapshotEntity?
 }

@@ -18,6 +18,9 @@ class MonthlySnapshotRepositoryImpl @Inject constructor(
     override suspend fun getByProfileIdAndMonth(profileId: Long, month: Int): MonthlySnapshot? =
         dao.getByProfileIdAndMonth(profileId, month)?.toDomain()
 
+    override suspend fun getLatestByProfileId(profileId: Long): MonthlySnapshot? =
+        dao.getLatestByProfileId(profileId)?.toDomain()
+
     override fun getAllByProfileId(profileId: Long): Flow<List<MonthlySnapshot>> =
         dao.getAllByProfileId(profileId).map { list -> list.map { it.toDomain() } }
 }

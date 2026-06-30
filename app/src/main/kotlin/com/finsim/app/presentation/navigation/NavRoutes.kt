@@ -8,6 +8,8 @@ package com.finsim.app.presentation.navigation
  */
 sealed class NavRoutes(val route: String) {
 
+    data object ProfileSelector : NavRoutes("profile_selector")
+
     data object Onboarding : NavRoutes("onboarding")
 
     data object Dashboard : NavRoutes("dashboard/{profileId}") {
@@ -41,4 +43,6 @@ sealed class NavRoutes(val route: String) {
     data object TransactionHistory : NavRoutes("history/{profileId}") {
         fun createRoute(profileId: Long) = "history/$profileId"
     }
+
+    data object Ranking : NavRoutes("ranking")
 }

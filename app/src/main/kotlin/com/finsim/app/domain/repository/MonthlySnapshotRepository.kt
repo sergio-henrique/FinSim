@@ -9,5 +9,6 @@ import kotlinx.coroutines.flow.Flow
 interface MonthlySnapshotRepository {
     suspend fun save(snapshot: MonthlySnapshot): Long
     suspend fun getByProfileIdAndMonth(profileId: Long, month: Int): MonthlySnapshot?
+    suspend fun getLatestByProfileId(profileId: Long): MonthlySnapshot?
     fun getAllByProfileId(profileId: Long): Flow<List<MonthlySnapshot>>
 }

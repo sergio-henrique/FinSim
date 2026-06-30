@@ -44,6 +44,8 @@ fun DashboardScreen(
     onNavigateToProgress: () -> Unit,
     onNavigateToStockMarket: () -> Unit,
     onNavigateToHistory: () -> Unit,
+    onNavigateToRanking: () -> Unit,
+    onNavigateToProfileSelector: () -> Unit,
     viewModel: DashboardViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -314,7 +316,18 @@ fun DashboardScreen(
                     onClick = onNavigateToHistory,
                     modifier = Modifier.weight(1f),
                 )
+                FinSimButton(
+                    text = "Ranking",
+                    onClick = onNavigateToRanking,
+                    modifier = Modifier.weight(1f),
+                )
             }
+
+            FinSimButton(
+                text = "Trocar perfil",
+                onClick = onNavigateToProfileSelector,
+                modifier = Modifier.fillMaxWidth(),
+            )
 
             FinSimButton(
                 text = "Avançar mês",

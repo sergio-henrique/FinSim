@@ -12,4 +12,5 @@ interface UserProfileRepository {
     suspend fun update(profile: UserProfile)
     suspend fun getById(id: Long): UserProfile?
     fun getAll(): Flow<List<UserProfile>>
+    suspend fun deleteById(id: Long)
 }
