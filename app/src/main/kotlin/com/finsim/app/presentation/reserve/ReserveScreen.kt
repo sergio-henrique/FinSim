@@ -35,6 +35,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.finsim.app.presentation.common.ContextualTipCard
 import com.finsim.app.presentation.common.EducationalMessage
 import com.finsim.app.presentation.common.FinSimButton
 import com.finsim.app.presentation.common.FinSimCard
@@ -106,6 +107,14 @@ fun ReserveScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Spacer(modifier = Modifier.height(8.dp))
+
+            ContextualTipCard(
+                emoji = "🛡️",
+                title = "O que é reserva de emergência?",
+                body = "É uma quantia guardada para cobrir imprevistos (doença, demissão, conserto urgente) " +
+                    "sem precisar fazer dívidas. O ideal é ter entre 3 e 6 vezes o seu gasto mensal. " +
+                    "Mantenha em investimentos com alta liquidez, como o Tesouro Selic.",
+            )
 
             // Valor atual da reserva em destaque
             FinSimCard(modifier = Modifier.fillMaxWidth()) {

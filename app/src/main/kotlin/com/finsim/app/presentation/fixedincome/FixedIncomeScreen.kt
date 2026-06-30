@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.finsim.app.domain.model.FixedIncomeInvestment
 import com.finsim.app.domain.model.FixedIncomeProductType
+import com.finsim.app.presentation.common.ContextualTipCard
 import com.finsim.app.presentation.common.EducationalMessage
 import com.finsim.app.presentation.common.FinSimButton
 import com.finsim.app.presentation.common.FinSimCard
@@ -104,6 +105,17 @@ fun FixedIncomeScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item { Spacer(modifier = Modifier.height(8.dp)) }
+
+            item {
+                ContextualTipCard(
+                    emoji = "📊",
+                    title = "Renda fixa: previsível e segura",
+                    body = "Em renda fixa você sabe as regras de rendimento antes de investir. " +
+                        "O Tesouro Selic rende próximo da taxa Selic e tem liquidez diária — " +
+                        "você pode resgatar quando precisar sem perda. " +
+                        "O CDB costuma render um percentual do CDI, que fica muito próximo da Selic.",
+                )
+            }
 
             // Seletor de produto
             item {

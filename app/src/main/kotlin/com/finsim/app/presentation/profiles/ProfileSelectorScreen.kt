@@ -81,7 +81,7 @@ fun ProfileSelectorScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Quem vai jogar?", fontWeight = FontWeight.Bold) },
+                title = { Text("Quem vai participar?", fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary,

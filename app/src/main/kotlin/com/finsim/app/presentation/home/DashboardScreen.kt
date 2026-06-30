@@ -29,9 +29,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.finsim.app.domain.model.Bill
+import com.finsim.app.presentation.common.ContextualTipCard
 import com.finsim.app.presentation.common.FinSimButton
 import com.finsim.app.presentation.common.FinSimCard
 import com.finsim.app.presentation.common.toCurrency
+import com.finsim.app.simulation.education.TipCatalog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,6 +48,7 @@ fun DashboardScreen(
     onNavigateToHistory: () -> Unit,
     onNavigateToRanking: () -> Unit,
     onNavigateToChallenges: () -> Unit,
+    onNavigateToGlossary: () -> Unit,
     onNavigateToProfileSelector: () -> Unit,
     viewModel: DashboardViewModel = hiltViewModel(),
 ) {
@@ -248,6 +251,14 @@ fun DashboardScreen(
                 )
             }
 
+            val tip = TipCatalog.forMonth(summary.profile.currentMonth)
+            ContextualTipCard(
+                emoji = tip.emoji,
+                title = "Dica do mês: ${tip.title}",
+                body = tip.body,
+                modifier = Modifier.fillMaxWidth(),
+            )
+
             val pendingBills = summary.currentMonthBills.filter { !it.isPaid }.take(3)
             if (pendingBills.isNotEmpty()) {
                 FinSimCard(modifier = Modifier.fillMaxWidth()) {
@@ -361,6 +372,11 @@ fun DashboardScreen(
                 FinSimButton(
                     text = "Ranking",
                     onClick = onNavigateToRanking,
+                    modifier = Modifier.weight(1f),
+                )
+                FinSimButton(
+                    text = "Glossário",
+                    onClick = onNavigateToGlossary,
                     modifier = Modifier.weight(1f),
                 )
             }

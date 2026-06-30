@@ -49,6 +49,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.finsim.app.application.usecase.Portfolio
 import com.finsim.app.application.usecase.PortfolioItem
 import com.finsim.app.domain.model.StockPriceHistory
+import com.finsim.app.presentation.common.ContextualTipCard
 import com.finsim.app.presentation.common.FinSimButton
 import com.finsim.app.presentation.common.FinSimCard
 import com.finsim.app.presentation.common.toCurrency
@@ -145,6 +146,14 @@ private fun MarketTab(portfolio: Portfolio, onSelect: (String) -> Unit) {
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         item {
+            ContextualTipCard(
+                emoji = "⚖️",
+                title = "Renda variável: risco e oportunidade",
+                body = "Ações são partes de empresas reais. Seu preço sobe e desce conforme o mercado. " +
+                    "Nunca invista mais do que pode perder e diversifique entre setores diferentes. " +
+                    "O longo prazo historicamente favorece quem mantém a calma em crises.",
+            )
+            Spacer(Modifier.height(8.dp))
             Text(
                 "Ativos disponíveis",
                 style = MaterialTheme.typography.titleSmall,

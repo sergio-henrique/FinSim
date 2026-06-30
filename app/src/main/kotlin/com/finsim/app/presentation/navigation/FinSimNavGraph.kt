@@ -8,6 +8,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.finsim.app.presentation.bills.BillsScreen
 import com.finsim.app.presentation.challenges.ChallengesScreen
+import com.finsim.app.presentation.glossary.GlossaryScreen
 import com.finsim.app.presentation.fixedincome.FixedIncomeScreen
 import com.finsim.app.presentation.history.TransactionHistoryScreen
 import com.finsim.app.presentation.home.DashboardScreen
@@ -73,6 +74,7 @@ fun FinSimNavGraph(navController: NavHostController) {
                 onNavigateToHistory = { navController.navigate(NavRoutes.TransactionHistory.createRoute(profileId)) },
                 onNavigateToRanking = { navController.navigate(NavRoutes.Ranking.route) },
                 onNavigateToChallenges = { navController.navigate(NavRoutes.Challenges.createRoute(profileId)) },
+                onNavigateToGlossary = { navController.navigate(NavRoutes.Glossary.route) },
                 onNavigateToProfileSelector = {
                     navController.navigate(NavRoutes.ProfileSelector.route) {
                         popUpTo(NavRoutes.ProfileSelector.route) { inclusive = true }
@@ -139,6 +141,10 @@ fun FinSimNavGraph(navController: NavHostController) {
 
         composable(NavRoutes.Ranking.route) {
             RankingScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(NavRoutes.Glossary.route) {
+            GlossaryScreen(onBack = { navController.popBackStack() })
         }
 
         composable(
